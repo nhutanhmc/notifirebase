@@ -1,131 +1,109 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
+  SafeAreaView,
   Text,
-  useColorScheme,
-  View,
+  Alert,
+  Button,
+  ScrollView,
 } from 'react-native';
+import messaging, {
+  FirebaseMessagingTypes,
+} from '@react-native-firebase/messaging';
+import Clipboard from '@react-native-clipboard/clipboard';
+import notifee from '@notifee/react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const App = () => {
+  const [token, setToken] = useState<string>('');
+  const [notiData, setNotiData] =
+    useState<FirebaseMessagingTypes.RemoteMessage | null>(null);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  // ✅ Tạo notification channel khi app mở
+  useEffect(() => {
+    async function createNotificationChannel() {
+      await notifee.requestPermission();
+      await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+        importance: notifee.AndroidImportance.HIGH,
+      });
+    }
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    createNotificationChannel();
+  }, []);
+
+  // ✅ Lấy token & xử lý các trạng thái noti
+  useEffect(() => {
+    messaging()
+      .getToken()
+      .then(fcmToken => {
+        setToken(fcmToken);
+        console.log('\n🎯========== FCM DEVICE TOKEN ==========');
+        console.log(fcmToken);
+        console.log('=======================================\n');
+      });
+
+    const unsub1 = messaging().onMessage(async remoteMessage => {
+      Alert.alert(
+        '📬 FCM Notification',
+        remoteMessage.notification?.body || 'Thông báo mới'
+      );
+      setNotiData(remoteMessage);
+    });
+
+    const unsub2 = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('🔁 Mở app từ noti (background):', remoteMessage.data);
+      setNotiData(remoteMessage);
+    });
+
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('💤 Mở app từ noti (quit):', remoteMessage.data);
+          setNotiData(remoteMessage);
+        }
+      });
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, []);
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+    <SafeAreaView style={{ flex: 1, padding: 20 }}>
+      <ScrollView>
+        <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>
+          🔥 FCM Token:
+        </Text>
+        <Text selectable>{token}</Text>
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+        <Button
+          title="📋 Log lại token"
+          onPress={() => console.log(token)}
+          color="#1E90FF"
+        />
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+        <Button
+          title="📎 Copy token"
+          onPress={() => {
+            Clipboard.setString(token);
+            Alert.alert('✅ Token đã được copy vào clipboard');
+          }}
+          color="#28a745"
+        />
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
-
-  return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+        {notiData && (
+          <>
+            <Text style={{ marginTop: 20, fontWeight: 'bold' }}>
+              📦 Notification Received:
+            </Text>
+            <Text selectable>{JSON.stringify(notiData, null, 2)}</Text>
+          </>
+        )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;

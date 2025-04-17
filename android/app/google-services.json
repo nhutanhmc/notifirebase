@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "118946084937",
+    "project_id": "do-an-fbd08",
+    "storage_bucket": "do-an-fbd08.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:118946084937:android:6e71ba4da4df3aa00be798",
+        "android_client_info": {
+          "package_name": "xavia.pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6138op9xdZVObMiu5ZqFGZlD-4PsBdy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
