@@ -18,7 +18,7 @@ android {
     namespace "com.notitestapp"
 
     defaultConfig {
-        applicationId "xavia.pro"
+        applicationId "com.smartrunningcoach"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
